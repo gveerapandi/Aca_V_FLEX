@@ -1,0 +1,6 @@
+.venv/
+__pycache__/
+data/session.json
+data/reminders.json
+data/users.json
+data/local_data.json

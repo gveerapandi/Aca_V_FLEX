@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>VFLEX | Login</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    <link rel="stylesheet" href="/vflex.css">
+</head>
+<body class="login-centered">
+    <div class="app-bg-glow"></div>
+    
+    <div class="login-box animate-fade-in">
+        <div class="brand-section" style="justify-content: center; flex-direction: column; text-align: center;">
+            <div class="brand-logo" style="width: 64px; height: 64px; border-radius: 18px; margin-bottom: 20px;">
+                <i class="material-icons" style="font-size: 32px;">school</i>
+            </div>
+            <h1 class="brand-name" style="font-size: 2.5rem;">VFLEX</h1>
+            <p style="color: var(--text-secondary); margin-top: 8px; font-weight: 500;">Academic Operations Suite</p>
+        </div>
+
+        <form id="loginForm" style="margin-top: 40px;">
+            <div class="input-group">
+                <label for="username">Institutional ID</label>
+                <input type="text" id="username" placeholder="e.g. ab1234@srmist.edu.in" required>
+            </div>
+            <div class="input-group">
+                <label for="password">Security Password</label>
+                <input type="password" id="password" placeholder="••••••••" required>
+            </div>
+            
+            <button type="submit" id="loginBtn" class="btn-primary" style="margin-top: 20px; display: flex; align-items: center; justify-content: center; gap: 12px;">
+                <span>Sign In to Portal</span>
+                <i class="material-icons">east</i>
+            </button>
+        </form>
+
+        <div id="errorMsg" style="color: var(--accent-danger); text-align: center; margin-top: 20px; font-weight: 600; font-size: 0.9rem; display: none;"></div>
+
+        <div style="margin-top: 40px; text-align: center; font-size: 0.85rem; color: var(--text-secondary);">
+            <p>Protected by VFLEX Authentication</p>
+        </div>
+    </div>
+
+    <script>
+        const loginForm = document.getElementById('loginForm');
+        const loginBtn = document.getElementById('loginBtn');
+        const errorMsg = document.getElementById('errorMsg');
+
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            loginBtn.disabled = true;
+            loginBtn.innerHTML = '<span>Verifying...</span>';
+            errorMsg.style.display = 'none';
+
+            try {
+                const response = await fetch('/api/trackit/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.isAuthenticated) {
+                    window.location.href = '/dashboard';
+                } else {
+                    throw new Error(data.error || 'Identity verification failed');
+                }
+            } catch (err) {
+                errorMsg.innerText = err.message;
+                errorMsg.style.display = 'block';
+                loginBtn.disabled = false;
+                loginBtn.innerHTML = '<span>Sign In to Portal</span><i class="material-icons">east</i>';
+            }
+        });
+    </script>
+</body>
+</html>

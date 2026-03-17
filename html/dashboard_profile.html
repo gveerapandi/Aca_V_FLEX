@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>VFLEX | Settings & Profile</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    <link rel="stylesheet" href="/vflex.css">
+</head>
+<body class="app-layout">
+    <div class="app-bg-glow"></div>
+
+    <aside class="app-sidebar">
+        <div class="brand-section">
+            <div class="brand-logo"><i class="material-icons">school</i></div>
+            <span class="brand-name">VFLEX</span>
+        </div>
+        <nav class="nav-menu">
+            <li class="nav-item"><a href="/dashboard"><i class="material-icons">dashboard</i><span>Portfolio</span></a></li>
+            <li class="nav-item"><a href="/dashboard/attendance"><i class="material-icons">event_available</i><span>Attendance</span></a></li>
+            <li class="nav-item"><a href="/dashboard/marks"><i class="material-icons">analytics</i><span>Assessments</span></a></li>
+            <li class="nav-item"><a href="/dashboard/timetable"><i class="material-icons">schedule</i><span>Scheduler</span></a></li>
+            <li class="nav-item"><a href="/dashboard/planner"><i class="material-icons">calendar_month</i><span>Planner</span></a></li>
+            <li class="nav-item"><a href="/dashboard/courses"><i class="material-icons">library_books</i><span>Curriculum</span></a></li>
+        </nav>
+        <div style="margin-top: auto;">
+            <li class="nav-item"><a href="javascript:void(0)" id="logoutBtn"><i class="material-icons">logout</i><span>Sign Out</span></a></li>
+        </div>
+    </aside>
+
+    <main class="app-main">
+        <header class="app-header">
+            <div class="page-title"><h1>Identity & Security</h1></div>
+        </header>
+
+        <section class="animate-fade-in" style="max-width: 900px; margin: 0 auto; display: flex; flex-direction: column; gap: 32px;">
+            <div class="dashboard-card res-flex" style="padding: 40px;">
+                <div class="user-avatar" id="profileLarge" style="width: 100px; height: 100px; font-size: 2.5rem; flex-shrink: 0;">U</div>
+                <div>
+                    <h2 id="fullName" style="font-size: 2rem; margin-bottom: 8px;">Portal Student</h2>
+                    <p id="regNumber" style="color: var(--accent-primary); font-family: 'JetBrains Mono'; font-weight: 700; font-size: 1.2rem;">--</p>
+                    <p style="color: var(--text-secondary); margin-top: 8px;">SRM Institute of Science and Technology</p>
+                </div>
+            </div>
+
+            <div class="res-grid">
+                <div class="dashboard-card">
+                    <h3 style="margin-bottom: 24px;">Academic Particulars</h3>
+                    <div style="display: flex; flex-direction: column; gap: 16px;">
+                        <div>
+                            <div style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase;">Email Identity</div>
+                            <div style="font-weight: 600;" id="userEmail">--</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase;">Registration</div>
+                            <div style="font-weight: 600;" id="regNumSub">--</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase;">Section</div>
+                            <div style="font-weight: 600;" id="userSection">--</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="dashboard-card">
+                    <h3 style="margin-bottom: 24px;">System Preferences</h3>
+                    <div style="display: flex; flex-direction: column; gap: 16px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span>Apperance Mode</span>
+                            <div style="background: var(--accent-primary); color: #000; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 800;">DARK MODE</div>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span>Active Syncing</span>
+                            <div style="background: rgba(45, 212, 191, 0.1); color: var(--accent-primary); padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 800;">ENABLED</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        async function fetchProfile() {
+            try {
+                const userRes = await fetch('/api/trackit/sync/updateUserInfo', { method: 'POST' });
+                const userData = await userRes.json();
+                
+                if (userData.userInfo) {
+                    const u = userData.userInfo;
+                    document.getElementById('fullName').innerText = u.name;
+                    document.getElementById('regNumber').innerText = u.regNumber;
+                    document.getElementById('regNumSub').innerText = u.regNumber;
+                    document.getElementById('userSection').innerText = u.section || '--';
+                    document.getElementById('profileLarge').innerText = u.name[0];
+                    document.getElementById('userEmail').innerText = userData.username || 'Not Available';
+                }
+            } catch (err) { console.error("Profile Fetch Error:", err); }
+        }
+
+        document.getElementById('logoutBtn').addEventListener('click', async () => {
+            await fetch('/api/trackit/auth/logout', { method: 'POST' });
+            window.location.href = '/';
+        });
+
+        fetchProfile();
+    </script>
+</body>
+</html>

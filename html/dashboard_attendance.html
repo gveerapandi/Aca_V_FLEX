@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>VFLEX | Attendance registry</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    <link rel="stylesheet" href="/vflex.css">
+</head>
+<body class="app-layout">
+    <div class="app-bg-glow"></div>
+
+    <!-- Sidebar Navigation -->
+    <aside class="app-sidebar">
+        <div class="brand-section">
+            <div class="brand-logo">
+                <i class="material-icons">school</i>
+            </div>
+            <span class="brand-name">VFLEX</span>
+        </div>
+
+        <nav class="nav-menu">
+            <li class="nav-item">
+                <a href="/dashboard">
+                    <i class="material-icons">dashboard</i>
+                    <span>Portfolio</span>
+                </a>
+            </li>
+            <li class="nav-item active">
+                <a href="/dashboard/attendance">
+                    <i class="material-icons">event_available</i>
+                    <span>Attendance</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="/dashboard/marks">
+                    <i class="material-icons">analytics</i>
+                    <span>Assessments</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="/dashboard/timetable">
+                    <i class="material-icons">schedule</i>
+                    <span>Scheduler</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="/dashboard/planner">
+                    <i class="material-icons">calendar_month</i>
+                    <span>Planner</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="/dashboard/courses">
+                    <i class="material-icons">library_books</i>
+                    <span>Curriculum</span>
+                </a>
+            </li>
+        </nav>
+
+        <div style="margin-top: auto;">
+            <li class="nav-item">
+                <a href="javascript:void(0)" id="logoutBtn">
+                    <i class="material-icons">logout</i>
+                    <span>Sign Out</span>
+                </a>
+            </li>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="app-main">
+        <header class="app-header">
+            <div class="page-title">
+                <h1>Attendance Registry</h1>
+            </div>
+            <div class="header-search">
+                <div style="position: relative; width: 100%;">
+                    <i class="material-icons" style="position: absolute; left: 16px; top: 12px; color: var(--text-secondary);">search</i>
+                    <input type="text" id="attendanceSearch" placeholder="Search..." 
+                        style="width: 100%; background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); padding: 12px 16px 12px 48px; border-radius: 12px; color: #fff; font-size: 0.9rem; outline: none;">
+                </div>
+            </div>
+            <div class="user-profile" onclick="location.href='/dashboard/profile'" style="cursor: pointer;">
+                <div class="user-avatar" id="userInitial">U</div>
+                <div style="display: flex; flex-direction: column;">
+                    <span id="userName" style="font-weight: 700; font-size: 0.9rem;">Portal User</span>
+                    <span style="color: var(--accent-primary); font-size: 0.75rem; font-weight: 700;">LIVE</span>
+                </div>
+            </div>
+        </header>
+
+        <section class="content-grid animate-fade-in" id="attendanceList">
+            <!-- Dynamically populated cards -->
+            <div style="grid-column: 1/-1; text-align: center; padding: 40px;">
+                <p style="color: var(--text-secondary);">Querying registry...</p>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        let allAttendance = [];
+
+        async function fetchAttendance() {
+            try {
+                const userRes = await fetch('/api/trackit/sync/updateUserInfo', { method: 'POST' });
+                const userData = await userRes.json();
+                
+                const attRes = await fetch('/api/trackit/sync/updateAttendance', { method: 'POST' });
+                const attData = await attRes.json();
+                
+                if (userData.userInfo) {
+                    document.getElementById('userName').innerText = userData.userInfo.name || "User";
+                    document.getElementById('userInitial').innerText = (userData.userInfo.name || "U")[0];
+                }
+
+                if (attData.attendance) {
+                    allAttendance = attData.attendance;
+                    renderAttendance(allAttendance);
+                } else if (attData.error) {
+                    document.getElementById('attendanceList').innerHTML = `<div style="grid-column:1/-1; text-align:center;"><p style="color: var(--accent-danger);">Error: ${attData.error}</p></div>`;
+                }
+            } catch (err) {
+                console.error("Attendance Fetch Error:", err);
+            }
+        }
+
+        function renderAttendance(data) {
+            const list = document.getElementById('attendanceList');
+            if (data.length === 0) {
+                list.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--text-secondary);">No matching courses found.</div>`;
+                return;
+            }
+
+            list.innerHTML = data.map(item => {
+                const isSafe = (item.courseAttendance || 0) >= 75;
+                return `
+                <div class="dashboard-card" style="display: flex; flex-direction: column; gap: 16px;">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                        <div style="font-weight: 800; color: var(--accent-secondary); font-size: 1.1rem;">${item.courseCode}</div>
+                        <div style="background: ${isSafe ? 'rgba(45, 212, 191, 0.1)' : 'rgba(244, 63, 94, 0.1)'}; 
+                                    color: ${isSafe ? 'var(--accent-primary)' : 'var(--accent-danger)'}; 
+                                    padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 800;">
+                            ${item.courseAttendance}%
+                        </div>
+                    </div>
+                    <div style="font-weight: 600; min-height: 48px;">${item.courseTitle}</div>
+                    <div style="display: flex; gap: 20px; font-size: 0.85rem; color: var(--text-secondary);">
+                        <span>Conducted: <strong>${item.courseConducted}</strong></span>
+                        <span>Absent: <strong style="color: var(--accent-danger);">${item.courseAbsent}</strong></span>
+                    </div>
+                    <div style="width: 100%; height: 6px; background: rgba(255,255,255,0.05); border-radius: 10px; overflow: hidden; margin-top: 8px;">
+                        <div style="width: ${item.courseAttendance}%; height: 100%; background: ${isSafe ? 'var(--accent-primary)' : 'var(--accent-danger)'};"></div>
+                    </div>
+                    <div style="font-size: 0.75rem; color: var(--text-secondary); text-align: right;">
+                        ${item.courseAttendanceStatus ? (item.courseAttendanceStatus.classes + ' classes ' + (item.courseAttendanceStatus.status === 'margin' ? 'to margin' : 'can miss')) : ''}
+                    </div>
+                </div>
+                `;
+            }).join('');
+        }
+
+        document.getElementById('attendanceSearch').addEventListener('input', (e) => {
+            const term = e.target.value.toLowerCase();
+            const filtered = allAttendance.filter(item => 
+                item.courseTitle.toLowerCase().includes(term) || 
+                item.courseCode.toLowerCase().includes(term)
+            );
+            renderAttendance(filtered);
+        });
+
+        document.getElementById('logoutBtn').addEventListener('click', async () => {
+            await fetch('/api/trackit/auth/logout', { method: 'POST' });
+            window.location.href = '/';
+        });
+
+        fetchAttendance();
+    </script>
+</body>
+</html>

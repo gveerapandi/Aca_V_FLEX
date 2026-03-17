@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>VFLEX | Scheduler</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    <link rel="stylesheet" href="/vflex.css">
+</head>
+<body class="app-layout">
+    <div class="app-bg-glow"></div>
+
+    <aside class="app-sidebar">
+        <div class="brand-section">
+            <div class="brand-logo"><i class="material-icons">school</i></div>
+            <span class="brand-name">VFLEX</span>
+        </div>
+        <nav class="nav-menu">
+            <li class="nav-item"><a href="/dashboard"><i class="material-icons">dashboard</i><span>Portfolio</span></a></li>
+            <li class="nav-item"><a href="/dashboard/attendance"><i class="material-icons">event_available</i><span>Attendance</span></a></li>
+            <li class="nav-item"><a href="/dashboard/marks"><i class="material-icons">analytics</i><span>Assessments</span></a></li>
+            <li class="nav-item active"><a href="/dashboard/timetable"><i class="material-icons">schedule</i><span>Scheduler</span></a></li>
+            <li class="nav-item"><a href="/dashboard/planner"><i class="material-icons">calendar_month</i><span>Planner</span></a></li>
+            <li class="nav-item"><a href="/dashboard/courses"><i class="material-icons">library_books</i><span>Curriculum</span></a></li>
+        </nav>
+        <div style="margin-top: auto;">
+            <li class="nav-item"><a href="javascript:void(0)" id="logoutBtn"><i class="material-icons">logout</i><span>Sign Out</span></a></li>
+        </div>
+    </aside>
+
+    <main class="app-main">
+        <header class="app-header">
+            <div class="page-title"><h1>Lecture Schedule</h1></div>
+            <div class="user-profile" onclick="location.href='/dashboard/profile'" style="cursor: pointer;">
+                <div class="user-avatar" id="userInitial">U</div>
+                <div style="display: flex; flex-direction: column;">
+                    <span id="userName" style="font-weight: 700; font-size: 0.9rem;">Portal User</span>
+                    <span style="color: var(--accent-primary); font-size: 0.75rem; font-weight: 700;">LIVE</span>
+                </div>
+            </div>
+        </header>
+
+        <div class="day-scroller" id="dayScroller">
+            <!-- Day tabs dynamically inserted -->
+        </div>
+
+        <section id="timetableContent" class="animate-fade-in" style="display: flex; flex-direction: column; gap: 16px;">
+            <div style="text-align: center; padding: 40px;"><p style="color: var(--text-secondary);">Syncing clock...</p></div>
+        </section>
+    </main>
+
+    <script>
+        let fullTimetable = [];
+
+        async function initScheduler() {
+            try {
+                const userRes = await fetch('/api/trackit/sync/updateUserInfo', { method: 'POST' });
+                const userData = await userRes.json();
+                
+                const ttRes = await fetch('/api/trackit/sync/updateTimetable', { method: 'POST' });
+                const ttData = await ttRes.json();
+                
+                if (userData.userInfo) {
+                    document.getElementById('userName').innerText = userData.userInfo.name || "User";
+                    document.getElementById('userInitial').innerText = (userData.userInfo.name || "U")[0];
+                }
+
+                if (ttData.timetable) {
+                    fullTimetable = ttData.timetable;
+                    const scroller = document.getElementById('dayScroller');
+                    scroller.innerHTML = ttData.timetable.map((day, idx) => `
+                        <div class="day-tab ${idx === 0 ? 'active' : ''}" onclick="showDay(${idx})">
+                            ${day.dayOrder}
+                        </div>
+                    `).join('');
+                    
+                    showDay(0);
+                }
+            } catch (err) { console.error("Timetable Sync Error:", err); }
+        }
+
+        window.showDay = (index) => {
+            const tabs = document.querySelectorAll('.day-tab');
+            tabs.forEach((t, idx) => t.classList.toggle('active', idx === index));
+
+            const day = fullTimetable[index];
+            const content = document.getElementById('timetableContent');
+            
+            const classes = day.class.filter(c => c.isClass);
+            if (classes.length === 0) {
+                content.innerHTML = `<div class="dashboard-card" style="text-align: center; padding: 60px;">
+                    <i class="material-icons" style="font-size: 48px; color: var(--text-secondary); margin-bottom: 16px;">weekend</i>
+                    <p style="color: var(--text-secondary); font-weight: 600;">No lectures scheduled. Enjoy your break!</p>
+                </div>`;
+            } else {
+                content.innerHTML = classes.map(c => `
+                    <div class="dashboard-card tt-card">
+                        <div class="tt-time">
+                            ${c.time}
+                        </div>
+                        <div class="tt-info">
+                            <h3 style="font-weight: 700; font-size: 1.1rem; margin-bottom: 4px;">${c.courseTitle}</h3>
+                            <div style="display: flex; gap: 16px; font-size: 0.8rem; color: var(--text-secondary);">
+                                <span><i class="material-icons" style="font-size: 1rem; vertical-align: middle; margin-right: 4px;">room</i>${c.courseRoomNo}</span>
+                                <span><i class="material-icons" style="font-size: 1rem; vertical-align: middle; margin-right: 4px;">code</i>${c.courseCode}</span>
+                            </div>
+                        </div>
+                        <div class="tt-badge">
+                            ${c.slot}
+                        </div>
+                    </div>
+                `).join('');
+            }
+        };
+
+        document.getElementById('logoutBtn').addEventListener('click', async () => {
+            await fetch('/api/trackit/auth/logout', { method: 'POST' });
+            window.location.href = '/';
+        });
+        
+        initScheduler();
+    </script>
+</body>
+</html>

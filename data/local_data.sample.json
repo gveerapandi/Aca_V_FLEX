@@ -1,0 +1,17 @@
+{
+  "userInfo": {
+    "name": "Local User",
+    "regNumber": "RA0000000000000",
+    "section": "X1",
+    "program": "B.Tech",
+    "department": "Computer Science and Engineering",
+    "semester": "1",
+    "batch": "1"
+  },
+  "attendance": [],
+  "timetable": [],
+  "marks": [],
+  "courses": [],
+  "calendar": [],
+  "optionalClasses": []
+}
